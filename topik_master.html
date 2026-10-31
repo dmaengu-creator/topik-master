@@ -65,6 +65,19 @@ function resetCurrentModeProgress(){
    render();
    updateProgressBoard();
  }
+ // Safari: ép cập nhật trực tiếp nội dung thanh tiến độ ngay trong lần bấm Reset.
+ // Không phụ thuộc vào lần render tiếp theo hoặc dữ liệu cache cũ.
+ const totalNow = sizes[set] || 1;
+ const headingEl = document.getElementById('progressHeading');
+ const countEl = document.getElementById('progressCount');
+ const fillEl = document.getElementById('progressFill');
+ const percentEl = document.getElementById('progressPercent');
+ const boardEl = document.getElementById('progressBoard');
+ if (headingEl) headingEl.textContent = 'Vị trí hiện tại · ' + ({flash:'Thẻ từ',learn:'Học',test:'Kiểm tra',match:'Ghép từ'}[currentMode] || 'Học') + ' · Bộ ' + (set+1);
+ if (countEl) countEl.textContent = currentMode === 'match' ? '0 / ' + Math.max(1, matchPairs.length || 6) + ' cặp' : 'Từ 1 / ' + totalNow;
+ if (fillEl) fillEl.style.width = (100 / totalNow).toFixed(2) + '%';
+ if (percentEl) percentEl.textContent = (100 / totalNow).toFixed(1) + '%';
+ if (boardEl) { boardEl.style.display='block'; boardEl.style.visibility='visible'; boardEl.style.opacity='1'; }
 }
 function updateProgressBoard(){
  const total=sizes[set]||1;
