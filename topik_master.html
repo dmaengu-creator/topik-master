@@ -85,7 +85,7 @@ function updateProgressBoard(){
  // Thẻ từ / Học / Kiểm tra: tiến độ dưới luôn bám đúng số từ đang hiển thị phía trên.
  // Ghép từ: hiển thị số cặp đã ghép trong lượt hiện tại.
  let count=mode==='match'
-   ? Object.keys(savedProgress.matchDone[set]||{}).length
+   ? matchDone.size
    : Math.min(total,Math.max(1,(Number(pos)||0)+1));
  const denominator=mode==='match'
    ? Math.max(1,matchPairs.length||6)
@@ -117,79 +117,14 @@ document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{saveCurrentPr
  savedProgress.testAnswered=testAnswered;
  try{localStorage.setItem(PROGRESS_KEY,JSON.stringify(savedProgress));}catch(e){}
  document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x.dataset.mode==='test'));$('listPanel').classList.add('hidden');render()};$('wrongList').onclick=()=>showList('wrong');$('knownList').onclick=()=>showList('known');document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-nav]').forEach(x=>x.classList.toggle('on',x===b));if(b.dataset.nav==='flash'){mode='flash';document.querySelector('[data-mode="flash"]').click()}else if(b.dataset.nav==='test'){document.querySelector('[data-mode="test"]').click()}else if(b.dataset.nav==='lists')showList('wrong');else{mode='flash';render()}});renderSets();document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x.dataset.mode===mode));if(mode==='match')restoreMatchRound();else render();updateProgressBoard();window.addEventListener('pagehide',saveCurrentProgress);window.addEventListener('beforeunload',saveCurrentProgress);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveCurrentProgress()});
-// Reset handler: dùng onclick trực tiếp để Safari/iOS luôn nhận thao tác chạm.
+// Gắn reset trực tiếp vào nút; dùng chung một hàm cho mọi chế độ để tránh lệch logic.
 window.resetCurrentModeProgress = resetCurrentModeProgress;
 const resetButton = document.getElementById('resetModeProgress');
 if (resetButton) {
-  resetButton.onclick = function(event) {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    const currentMode = mode;
-    try {
-      // Luôn đưa vị trí đang học về mục đầu tiên của bộ hiện tại.
-      reviewMode = false;
-      pool = range();
-      pos = 0;
-      flipped = false;
-      savedProgress.positions[setKey(currentMode, set)] = 0;
-
-      if (currentMode === 'flash') {
-        savedProgress.flashMax[set] = 0;
-      } else if (currentMode === 'learn') {
-        savedProgress.learnDone[set] = {};
-      } else if (currentMode === 'test') {
-        savedProgress.testDone[set] = {};
-        const firstId = sizes.slice(0, set).reduce((a, b) => a + b, 0) + 1;
-        const lastId = firstId + sizes[set] - 1;
-        for (let n = firstId; n <= lastId; n++) delete testAnswered[n];
-        savedProgress.testAnswered = testAnswered;
-        scores[set + 1] = {correct: 0, total: 0};
-        localStorage.setItem('tm_scores', JSON.stringify(scores));
-      } else if (currentMode === 'match') {
-        savedProgress.matchDone[set] = {};
-        delete savedProgress.matchRounds[set];
-        matchPairs = [];
-        matchKoOrder = [];
-        matchViOrder = [];
-        matchDone = new Set();
-        matchKoPick = null;
-        matchViPick = null;
-        matchLock = false;
-        matchMessage = '';
-      }
-
-      savedProgress.lastSet = set;
-      savedProgress.lastMode = currentMode;
-      savedProgress.positions[setKey(currentMode, set)] = 0;
-      persistProgress();
-
-      if (currentMode === 'match') {
-        newMatchRound();
-      } else {
-        render();
-        updateProgressBoard();
-      }
-
-      // Đồng bộ trực quan ngay sau lần chạm: mục đầu tiên = 1, thanh = 1/N.
-      const totalNow = Math.max(1, pool.length);
-      const heading = document.getElementById('progressHeading');
-      const count = document.getElementById('progressCount');
-      const fill = document.getElementById('progressFill');
-      const percent = document.getElementById('progressPercent');
-      if (heading) heading.textContent = 'Vị trí hiện tại · ' +
-        ({flash:'Thẻ từ', learn:'Học', test:'Kiểm tra', match:'Ghép từ'}[currentMode] || 'Học') +
-        ' · Bộ ' + (set + 1);
-      if (count) count.textContent = currentMode === 'match'
-        ? '0 / ' + Math.max(1, matchPairs.length) + ' cặp'
-        : 'Từ 1 / ' + totalNow;
-      if (fill) fill.style.width = '0%';
-      if (percent) percent.textContent = '0%';
-    } catch (error) {
-      console.error('Không thể đặt lại tiến trình:', error);
-    }
-    return false;
-  };
+  resetButton.addEventListener('click', function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    resetCurrentModeProgress();
+  });
 }
 </script></body></html>
